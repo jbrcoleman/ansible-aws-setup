@@ -1,0 +1,28 @@
+- name: Deploy VPC
+  ec2_vpc_net:
+    state: present
+    cidr_block: 10.0.0.0/16
+    subnets:
+      - cidr: 10.0.255.192/28
+        az: "{{ az1 }}"
+        resource_tags: { "Environment": "Public" }
+      - cidr: 10.0.255.208/28
+        az: "{{ az2 }}"
+        resource_tags: { "Environment": "Private"}
+      - cidr: 10.0.255.224/28
+        az: "{{ az2 }}"
+        resource_tags: { "Environment": "Data"}
+    internet_gateway: True
+    route_tables:
+      - subnets:
+          - 10.0.255.192/28
+        routes:
+          - dest: 0.0.0.0/0
+            gw: igw
+      - subnets:
+          - 10.0.255.208/28
+          - 10.0.255.224/28
+        routes:
+          - dest: 10.0.255.192/28
+    region: "{{ region }}"
+  register: vpc
