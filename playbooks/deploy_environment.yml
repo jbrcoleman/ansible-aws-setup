@@ -1,0 +1,16 @@
+- name: Deploy VPC
+  hosts: localhost
+  roles:
+    - ../roles/vpc
+
+- name: Deploy nginx server
+  hosts: web
+  ec2:
+   key_name: "{{ key_pair_name }}"
+   instance_type: "{{ instance_type }}"
+   image: "{{ ami_id }}"
+   volumes:
+     - device_name: /dev/sdb
+       volume_size: "{{ EBS_size }}"
+       delete_on_termination: true
+   vpc_subnet_id: private_subnet.id
