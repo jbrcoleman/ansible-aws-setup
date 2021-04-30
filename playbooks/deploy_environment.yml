@@ -1,16 +1,75 @@
 - name: Deploy VPC
   hosts: localhost
-  roles:
-    - ../roles/vpc
+  vars:
+    - region: "us-east-1"
+    - az1: "us-east-1a"
+    - az2: "us-east-1b"
+    - key_pair_name: "launch"
+    - instance_type: "t3.micro"
+    - ami_id: "ami-03e95cf9553d62e4e"
+    - EBS_size: 50  
+  tasks:
+    - name: Deploy VPC
+      ec2_vpc_net:
+        name: Base
+        state: present
+        cidr_block: 10.0.0.0/16
+        region: "{{ region }}"
+      register: vpc    
 
-- name: Deploy nginx server
+    - name: Deploy Public subnet
+      ec2_vpc_subnet:
+        state: present
+        vpc_id: "{{ vpc.vpc.id }}"
+        cidr: 10.0.255.192/28
+        tags:
+          Name: Public Subnet
+      register: public_subnet
+
+    - name: Deploy Private subnet
+      ec2_vpc_subnet:
+        state: present
+        vpc_id: "{{vpc.vpc.id }}"
+        cidr: 10.0.255.208/28
+        tags:
+          Name: Private Subnet
+      register: private_subnet
+
+    - name: Deploy Data subnet
+      ec2_vpc_subnet:
+        state: present
+        vpc_id: "{{ vpc.vpc.id }}"
+        cidr: 10.0.255.224/28
+        tags:
+          Name: Data Subnet
+      register: data_subnet
+
+    - name: Deploy nginx server
+      ec2_instance:
+        key_name: "{{ key_pair_name }}"
+        vpc_subnet_id: "{{ private_subnet.subnet.id }}"
+        tags:
+          Name: "Nginx-server"
+        instance_type: "{{ instance_type }}"
+        image_id: "{{ ami_id }}"
+        volumes:
+          - device_name: /dev/sdb
+            ebs:
+              volume_size: "{{ EBS_size }}"
+              delete_on_termination: true
+      register: nginx_server
+    - name: Print return information from the previous task
+      ansible.builtin.debug:
+        var: nginx_server
+      
+    - name: Add host to group 'just_created' with variable foo=42
+      add_host:
+        name: '{{ nginx_server.instances[0].network_interfaces[0].private_ip_address }}'
+        groups: web
+      
+- name: Apply Nginx server
   hosts: web
-  ec2:
-   key_name: "{{ key_pair_name }}"
-   instance_type: "{{ instance_type }}"
-   image: "{{ ami_id }}"
-   volumes:
-     - device_name: /dev/sdb
-       volume_size: "{{ EBS_size }}"
-       delete_on_termination: true
-   vpc_subnet_id: private_subnet.id
+  become: true
+  roles:
+    - ../roles/nginx
+
