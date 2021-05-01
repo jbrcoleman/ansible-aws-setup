@@ -93,11 +93,20 @@
           - dest: 0.0.0.0/0
             gateway_id: "{{ nat_gateway.nat_gateway_id }}"
       register: private_route_table
-    
+   
+    - name: create a private zone
+      route53_zone:
+        zone: example.com
+        vpc_id: "vpc-06c7f281b105f02e4" #"{{ vpc.vpc.id }}"
+        vpc_region: "{{ region }}"
+      tags: zone
+
+
     - name: deploy elb  
       ec2_elb_lb:
         name: "test-please-delete"
         state: present
+        region: "{{ region }}"
         subnets: 
           - "subnet-0e22282034c9a7493" #"{{ public_subnet.subnet.id }}"
         listeners:
@@ -109,6 +118,7 @@
             load_balancer_port: 443
             instance_protocol: http # optional, defaults to value of protocol setting
             instance_port: 80
+            ssl_certificate_id:	arn:aws:acm:us-east-1:202254811034:certificate/54e83993-bb99-449c-8523-25f8fe2b9204
       tags: elb
 
     - name: Deploy nginx server
