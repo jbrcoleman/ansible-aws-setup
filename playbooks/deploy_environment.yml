@@ -46,6 +46,50 @@
         tags:
           Name: Data Subnet
       register: data_subnet
+    
+    - name: Deploy IGW
+      ec2_vpc_igw:
+        vpc_id: "{{ vpc.vpc.id }}"
+        state: present
+        tags:
+          Name: IGW
+      register: igw
+
+    - name: Create new nat gateway and allocate new EIP.
+      ec2_vpc_nat_gateway:
+        state: present
+        subnet_id: "{{ public_subnet.subnet.id }}"
+        wait: true
+        region: "{{ region }}"
+        if_exist_do_not_create: true
+      register: nat_gateway
+
+    - name: Set up public subnet route table
+      ec2_vpc_route_table:
+        vpc_id: "{{ vpc.vpc.id }}"
+        region: "{{ region }}"
+        tags:
+          Name: Public
+        subnets:
+          - "{{ public_subnet.subnet.id }}"
+        routes:
+          - dest: 0.0.0.0/0
+            gateway_id: "{{ igw.gateway_id }}"
+      register: public_route_table 
+
+    - name: Set up private subnet route table
+      ec2_vpc_route_table:
+        vpc_id: "{{ vpc.vpc.id }}"
+        region: "{{ region }}"
+        tags:
+          Name: Private
+        subnets:
+          - "{{ private_subnet.subnet.id }}"
+          - "{{ data_subnet.subnet.id }}" 
+        routes:
+          - dest: 0.0.0.0/0
+            gateway_id: "{{ nat_gateway.nat_gateway_id }}"
+      register: private_route_table
 
     - name: Deploy nginx server
       ec2_instance:
