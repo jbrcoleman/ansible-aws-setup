@@ -18,7 +18,7 @@
     - name: Deploy nginx server
       ec2_instance:
         key_name: "{{ key_pair_name }}"
-        vpc_subnet_id: "subnet-06f1944ebedf39c05" #"{{ private_subnet.subnet.id }}"
+        vpc_subnet_id: "{{ private_subnet.subnets[0].subnet_id }}"
         region: "{{ region }}"
         instance_role: "EC2-SSM"
         security_group: "test"
