@@ -135,6 +135,8 @@
         vpc_subnet_id: "{{ public_subnet.subnet.id }}"
         region: "{{ region }}"
         instance_role: "admin-role"
+        network:
+          assign_public_ip: true
         security_groups: 
           - "test"
           - "home"  
