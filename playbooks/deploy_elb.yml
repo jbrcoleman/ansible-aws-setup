@@ -3,7 +3,8 @@
   vars:
      - region: "us-east-1"
   tasks:
-    - ec2_vpc_subnet_info:
+    - name: get subnet info 
+      ec2_vpc_subnet_info:
         region: "{{ region }}"
         filters:
           "tag:Name": "Public Subnet"
@@ -31,15 +32,19 @@
       pause:
         minutes: 1
 
-    - elb_classic_lb_info:
+    - name: get elb info
+      elb_classic_lb_info:
         names: "test-please-delete"
         region: "{{ region }}"
       register: elb_info
-      tags: elb
+      tags: 
+        - skip_ansible_lint
 
     - name: get elb ip
       command: dig +short "{{ elb_info.elbs.0.dns_name }}"
-      tags: elb
+      tags: 
+        - elb
+        - skip_ansible_lint  
       register: elb_ip
 
     - name: Print return information from the previous task

@@ -9,7 +9,8 @@
     - ami_id: "ami-096fda3c22c1c990a"
     - EBS_size: 50
   tasks:
-    - ec2_vpc_subnet_info:
+    - name: get subnet info
+      ec2_vpc_subnet_info:
         region: "{{ region }}"
         filters:
           "tag:Name": "Data Subnet"

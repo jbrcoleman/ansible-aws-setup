@@ -41,6 +41,8 @@
 - name: get ip
   command: "hostname -I"
   register: ip
+  tags:
+    - skip_ansible_lint
 
 - name: print 
   debug:

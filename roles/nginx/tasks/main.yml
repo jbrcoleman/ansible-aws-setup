@@ -1,8 +1,12 @@
 - name: install nginx
   command: sudo amazon-linux-extras install -y nginx1
+  tags:
+  - skip_ansible_lint
 
 - name: Start nginx
   service:
     name: nginx
     state: started
     enabled: yes
+  tags:
+  - skip_ansible_lint
