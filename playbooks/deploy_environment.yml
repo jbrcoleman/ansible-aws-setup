@@ -121,75 +121,19 @@
             ssl_certificate_id:	arn:aws:acm:us-east-1:202254811034:certificate/54e83993-bb99-449c-8523-25f8fe2b9204
       tags: elb
 
-    - name: Deploy nginx server
-      ec2_instance:
-        key_name: "{{ key_pair_name }}"
-        vpc_subnet_id: "subnet-06f1944ebedf39c05" #"{{ private_subnet.subnet.id }}"
+    - elb_classic_lb_info:
+        names: "test-please-delete"
         region: "{{ region }}"
-        instance_role: "EC2-SSM"
-        tags:
-          Name: "Nginx-server"
-        instance_type: "{{ instance_type }}"
-        image_id: "{{ ami_id }}"
-        volumes:
-          - device_name: /dev/sdb
-            ebs:
-              volume_size: "{{ EBS_size }}"
-              delete_on_termination: true
-      tags: nginx
-      register: nginx_server
-      
+      register: elb_info
+      tags: elb
+
+    - name: get elb ip
+      command: dig +short "{{ elb_info.elbs.0.dns_name }}"
+      tags: elb
+      register: elb_ip
+
     - name: Print return information from the previous task
       ansible.builtin.debug:
-        var: nginx_server
-      
-    - name: Add host to group 'just_created' with variable foo=42
-      add_host:
-        name: '{{ nginx_server.instances[0].network_interfaces[0].private_ip_address }}'
-        groups: web
-     
-    - name: Deploy mysql
-      ec2_instance:
-        key_name: "{{ key_pair_name }}"
-        vpc_subnet_id: "{{ data_subnet.subnet.id }}"
-        region: "{{ region }}"
-        tags:
-          Name: "Mysql-server"
-        instance_type: "{{ instance_type }}"
-        image_id: "{{ ami_id }}"
-        volumes:
-          - device_name: /dev/sdb
-            ebs:
-              volume_size: "{{ EBS_size }}"
-              delete_on_termination: true
-      register: mysql_server
-
-    - name: Add host to group 'just_created' with variable foo=42
-      add_host:
-        name: '{{ mysql_server.instances[0].network_interfaces[0].private_ip_address }}'
-        groups: database
-
-- name: Apply Nginx server
-  hosts: web
-  become: yes
-  roles:
-    - "../roles/nginx"
-
-- name: Apply mysql server
-  hosts: database
-  become: yes
-  roles:
-    - "../roles/mysql"
-  #tasks:
-  #  - name: install nginx
-  #    yum:
-  #      name: nginx
-  #      state: present
-
-  #  - name: Start nginx
-  #    service:
-  #      name: nginx
-  #      state: started
-      #  roles:
-      #- "../roles/nginx"
+        var: elb_ip.stdout_lines[0]
+      tags: elb
 
