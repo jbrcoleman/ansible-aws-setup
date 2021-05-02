@@ -1,0 +1,48 @@
+- name: Deploy nginx
+  hosts: localhost
+  vars:
+    - region: "us-east-1"
+    - az1: "us-east-1a"
+    - az2: "us-east-1b"
+    - key_pair_name: "launch"
+    - instance_type: "t3.micro"
+    - ami_id: "ami-048f6ed62451373d9"
+    - EBS_size: 50
+  tasks:
+    - ec2_vpc_subnet_info:
+        region: "{{ region }}"
+        filters:
+          "tag:Name": Private
+      register: private_subnet
+
+    - name: Deploy nginx server
+      ec2_instance:
+        key_name: "{{ key_pair_name }}"
+        vpc_subnet_id: "subnet-06f1944ebedf39c05" #"{{ private_subnet.subnet.id }}"
+        region: "{{ region }}"
+        instance_role: "EC2-SSM"
+        security_group: "test"
+        tags:
+          Name: "Nginx-server"
+        instance_type: "{{ instance_type }}"
+        image_id: "{{ ami_id }}"
+        volumes:
+          - device_name: /dev/sdb
+            ebs:
+              volume_size: "{{ EBS_size }}"
+              delete_on_termination: true
+      tags: nginx
+      register: nginx_server
+
+    - name: Add host to group 'web'
+      add_host:
+        name: '{{ nginx_server.instances[0].network_interfaces[0].private_ip_address }}'
+        groups: web
+
+- name: Apply Nginx server
+  hosts: web
+  become: yes
+  roles:
+    - "../roles/nginx"
+
+
