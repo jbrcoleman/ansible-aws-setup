@@ -1,16 +1,18 @@
 - name: Install MySQL repository
-  yum:
+  dnf:
     name: "https://dev.mysql.com/get/mysql80-community-release-el7-1.noarch.rpm"
     state: present
     disable_gpg_check: yes
 
-- name: Install MySQL packages
-  yum:
-    name: mysql-server #"{{ item }}"
+- name: Install mysql-server
+  dnf:
+    name: mysql-server 
     state: present
-    #with_items:
-    #- mysql-server
-    #- MySQL-python
+- name: pip
+  dnf:
+    name: python3-pip
+    state: present
+
 - name: Install PyMySQL
   pip:
     name: PyMySQL
@@ -35,3 +37,11 @@
     login_password: "{{ db_pw }}"
     name: "{{ db_name }}"
     state: present
+
+- name: print 
+  debug:
+    msg:
+    - "login_user: {{ db_user }}"
+    - "login_password: {{ db_pw }}"
+    - "name: {{ db_name }}"
+      #- "connection_string: mysql --host={{ mysql_server_info.instances.private_ip_address}} --user={{ db_user }} --password" 

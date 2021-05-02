@@ -1,0 +1,47 @@
+- name: Deploy mysql
+  hosts: localhost
+  vars:
+    - region: "us-east-1"
+    - az1: "us-east-1a"
+    - az2: "us-east-1b"
+    - key_pair_name: "launch"
+    - instance_type: "t3.micro"
+    - ami_id: "ami-096fda3c22c1c990a"
+    - EBS_size: 50
+  tasks:
+    - ec2_vpc_subnet_info:
+        region: "{{ region }}"
+        filters:
+          "tag:Name": "Data Subnet"
+      register: data_subnet
+
+    - name: Deploy mysql
+      ec2_instance:
+        key_name: "{{ key_pair_name }}"
+        vpc_subnet_id: "{{ data_subnet.subnets[0].subnet_id }}"
+        region: "{{ region }}"
+        tags:
+          Name: "Mysql-server"
+        instance_type: "{{ instance_type }}"
+        image_id: "{{ ami_id }}"
+        security_group: "test"
+        volumes:
+          - device_name: /dev/sdb
+            ebs:
+              volume_size: "{{ EBS_size }}"
+              delete_on_termination: true
+      register: mysql_server
+
+    - name: Add host to group 'database'
+      add_host:
+        name: '{{ mysql_server.instances[0].network_interfaces[0].private_ip_address }}'
+        groups: database
+
+- name: Apply mysql server
+  hosts: database
+  vars: #local connection defaults to using the system python
+  #ansible_python_interpreter: /usr/bin/python3
+    region: "us-east-1"
+  become: yes
+  roles:
+    - "../roles/mysql"
