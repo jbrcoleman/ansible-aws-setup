@@ -6,7 +6,7 @@
     - az2: "us-east-1b"
     - key_pair_name: "launch"
     - instance_type: "t3.micro"
-    - ami_id: "ami-097ea9d3cb4252ddb"
+    - ami_id: "ami-02dc3dd205de6fd92"
     - EBS_size: 50  
   tasks:
     - name: Deploy VPC
