@@ -6,7 +6,7 @@
     - az2: "us-east-1b"
     - key_pair_name: "launch"
     - instance_type: "t3.micro"
-    - ami_id: "ami-03e95cf9553d62e4e"
+    - ami_id: "ami-048f6ed62451373d9"
     - EBS_size: 50  
   tasks:
     - name: Deploy VPC
@@ -124,8 +124,9 @@
     - name: Deploy nginx server
       ec2_instance:
         key_name: "{{ key_pair_name }}"
-        vpc_subnet_id: "{{ private_subnet.subnet.id }}"
+        vpc_subnet_id: "subnet-06f1944ebedf39c05" #"{{ private_subnet.subnet.id }}"
         region: "{{ region }}"
+        instance_role: "EC2-SSM"
         tags:
           Name: "Nginx-server"
         instance_type: "{{ instance_type }}"
@@ -135,7 +136,9 @@
             ebs:
               volume_size: "{{ EBS_size }}"
               delete_on_termination: true
+      tags: nginx
       register: nginx_server
+      
     - name: Print return information from the previous task
       ansible.builtin.debug:
         var: nginx_server
