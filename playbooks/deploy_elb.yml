@@ -1,0 +1,48 @@
+- name: Deploy ELB
+  hosts: localhost
+  vars:
+     - region: "us-east-1"
+  tasks:
+    - ec2_vpc_subnet_info:
+        region: "{{ region }}"
+        filters:
+          "tag:Name": "Public Subnet"
+      register: public_subnet     
+
+    - name: deploy elb
+      ec2_elb_lb:
+        name: "test-please-delete"
+        state: present
+        region: "{{ region }}"
+        subnets:
+          - "{{ public_subnet.subnets[0].subnet_id }}"
+        listeners:
+          - protocol: http # options are http, https, ssl, tcp
+            load_balancer_port: 80
+            instance_port: 80
+            proxy_protocol: True
+          - protocol: https
+            load_balancer_port: 443
+            instance_protocol: http # optional, defaults to value of protocol setting
+            instance_port: 80
+            ssl_certificate_id: arn:aws:acm:us-east-1:202254811034:certificate/54e83993-bb99-449c-8523-25f8fe2b9204
+
+    - name: Pause for 1 minutes for elb to be created
+      pause:
+        minutes: 1
+
+    - elb_classic_lb_info:
+        names: "test-please-delete"
+        region: "{{ region }}"
+      register: elb_info
+      tags: elb
+
+    - name: get elb ip
+      command: dig +short "{{ elb_info.elbs.0.dns_name }}"
+      tags: elb
+      register: elb_ip
+
+    - name: Print return information from the previous task
+      ansible.builtin.debug:
+        var: elb_ip.stdout_lines[0]
+      tags: elb
