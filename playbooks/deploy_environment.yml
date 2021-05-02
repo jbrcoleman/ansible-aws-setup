@@ -6,7 +6,7 @@
     - az2: "us-east-1b"
     - key_pair_name: "launch"
     - instance_type: "t3.micro"
-    - ami_id: "ami-048f6ed62451373d9"
+    - ami_id: "ami-097ea9d3cb4252ddb"
     - EBS_size: 50  
   tasks:
     - name: Deploy VPC
@@ -101,39 +101,87 @@
         vpc_region: "{{ region }}"
       tags: zone
 
-
-    - name: deploy elb  
-      ec2_elb_lb:
-        name: "test-please-delete"
-        state: present
+    - name: example using security group rule descriptions
+      ec2_group:
+        name: "home"
+        description: sg with rule descriptions
+        vpc_id: "{{ vpc.vpc.id }}"
         region: "{{ region }}"
-        subnets: 
-          - "subnet-0e22282034c9a7493" #"{{ public_subnet.subnet.id }}"
-        listeners:
-          - protocol: http # options are http, https, ssl, tcp
-            load_balancer_port: 80
-            instance_port: 80
-            proxy_protocol: True
-          - protocol: https
-            load_balancer_port: 443
-            instance_protocol: http # optional, defaults to value of protocol setting
-            instance_port: 80
-            ssl_certificate_id:	arn:aws:acm:us-east-1:202254811034:certificate/54e83993-bb99-449c-8523-25f8fe2b9204
-      tags: elb
+        tags:
+          Name: "home"
+        rules:
+          - proto: tcp
+            ports:
+            - 22
+            cidr_ip: 173.73.145.102/32
+            rule_desc: allow on port 22 from address  
 
-    - elb_classic_lb_info:
-        names: "test-please-delete"
+    - name: example using security group rule descriptions
+      ec2_group:
+        name: "test"
+        description: sg with rule descriptions
+        vpc_id: "{{ vpc.vpc.id }}"
         region: "{{ region }}"
-      register: elb_info
-      tags: elb
+        tags:
+          Name: "test"
+        rules:
+          - proto: all
+            cidr_ip: 10.0.0.0/16
+            rule_desc: allow all local traffic
 
-    - name: get elb ip
-      command: dig +short "{{ elb_info.elbs.0.dns_name }}"
-      tags: elb
-      register: elb_ip
+    - name: Deploy ansible controller
+      ec2_instance:
+        key_name: "{{ key_pair_name }}"
+        vpc_subnet_id: "{{ public_subnet.subnet.id }}"
+        region: "{{ region }}"
+        instance_role: "admin-role"
+        security_groups: 
+          - "test"
+          - "home"  
+        tags:
+          Name: "Ansible-Controller"
+        instance_type: "{{ instance_type }}"
+        image_id: "{{ ami_id }}"
+        volumes:
+          - device_name: /dev/sdb
+            ebs:
+              volume_size: "{{ EBS_size }}"
+              delete_on_termination: true
+      register: ansible_controller
+      tags: ansible
 
-    - name: Print return information from the previous task
-      ansible.builtin.debug:
-        var: elb_ip.stdout_lines[0]
-      tags: elb
+      #    - name: deploy elb  
+      # ec2_elb_lb:
+      #  name: "test-please-delete"
+      #  state: present
+      #  region: "{{ region }}"
+      #  subnets: 
+      #    - "subnet-0e22282034c9a7493" #"{{ public_subnet.subnet.id }}"
+      #  listeners:
+      #    - protocol: http # options are http, https, ssl, tcp
+      #      load_balancer_port: 80
+      #      instance_port: 80
+      #      proxy_protocol: True
+      #    - protocol: https
+      #      load_balancer_port: 443
+      #      instance_protocol: http # optional, defaults to value of protocol setting
+      #      instance_port: 80
+      #      ssl_certificate_id:	arn:aws:acm:us-east-1:202254811034:certificate/54e83993-bb99-449c-8523-25f8fe2b9204
+      #tags: elb
+
+      #- elb_classic_lb_info:
+      #  names: "test-please-delete"
+      #  region: "{{ region }}"
+      #register: elb_info
+      #tags: elb
+
+      #- name: get elb ip
+      #command: dig +short "{{ elb_info.elbs.0.dns_name }}"
+      #tags: elb
+      #register: elb_ip
+
+      #- name: Print return information from the previous task
+      #ansible.builtin.debug:
+      # var: elb_ip.stdout_lines[0]
+      #tags: elb
 
