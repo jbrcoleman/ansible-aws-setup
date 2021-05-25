@@ -8,7 +8,7 @@
         region: "{{ region }}"
         filters:
           "tag:Name": "Public Subnet"
-      register: public_subnet     
+      register: public_subnet
 
     - name: deploy elb
       ec2_elb_lb:
@@ -37,14 +37,14 @@
         names: "test-please-delete"
         region: "{{ region }}"
       register: elb_info
-      tags: 
+      tags:
         - skip_ansible_lint
 
     - name: get elb ip
       command: dig +short "{{ elb_info.elbs.0.dns_name }}"
-      tags: 
+      tags:
         - elb
-        - skip_ansible_lint  
+        - skip_ansible_lint
       register: elb_ip
 
     - name: Print return information from the previous task

@@ -7,7 +7,7 @@
     - key_pair_name: "launch"
     - instance_type: "t3.micro"
     - ami_id: "ami-02dc3dd205de6fd92"
-    - EBS_size: 50  
+    - EBS_size: 50
   tasks:
     - name: Deploy VPC
       ec2_vpc_net:
@@ -15,7 +15,7 @@
         state: present
         cidr_block: 10.0.0.0/16
         region: "{{ region }}"
-      register: vpc    
+      register: vpc
 
     - name: Deploy Public subnet
       ec2_vpc_subnet:
@@ -49,7 +49,7 @@
         tags:
           Name: Data Subnet
       register: data_subnet
-    
+
     - name: Deploy IGW
       ec2_vpc_igw:
         vpc_id: "{{ vpc.vpc.id }}"
@@ -78,7 +78,7 @@
         routes:
           - dest: 0.0.0.0/0
             gateway_id: "{{ igw.gateway_id }}"
-      register: public_route_table 
+      register: public_route_table
 
     - name: Set up private subnet route table
       ec2_vpc_route_table:
@@ -88,12 +88,12 @@
           Name: Private
         subnets:
           - "{{ private_subnet.subnet.id }}"
-          - "{{ data_subnet.subnet.id }}" 
+          - "{{ data_subnet.subnet.id }}"
         routes:
           - dest: 0.0.0.0/0
             gateway_id: "{{ nat_gateway.nat_gateway_id }}"
       register: private_route_table
-   
+
     - name: create a private zone
       route53_zone:
         zone: example.com
@@ -114,7 +114,7 @@
             ports:
             - 22
             cidr_ip: 173.73.145.102/32
-            rule_desc: allow on port 22 from address  
+            rule_desc: allow on port 22 from address
 
     - name: example using security group rule descriptions
       ec2_group:
@@ -137,9 +137,9 @@
         instance_role: "admin-role"
         network:
           assign_public_ip: true
-        security_groups: 
+        security_groups:
           - "test"
-          - "home"  
+          - "home"
         tags:
           Name: "Ansible-Controller"
         instance_type: "{{ instance_type }}"
