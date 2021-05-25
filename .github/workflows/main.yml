@@ -13,7 +13,7 @@ jobs:
 
     - name: Lint Ansible Playbook
       # replace "master" with any valid ref
-      uses: ansible/ansible-lint-action@master
+      uses: ansible/ansible-lint-action@main
       with:
         # [required]
         # Paths to ansible files (i.e., playbooks, tasks, handlers etc..)
@@ -26,7 +26,9 @@ jobs:
         targets: ""
         # [optional]
         # Arguments to be passed to the ansible-lint
-
+        override-deps: |
+          ansible==2.11.1
+          ansible-lint==5.0.11
         # Options:
         #   -q                    quieter, although not silent output
         #   -p                    parseable output in the format of pep8
@@ -46,4 +48,4 @@ jobs:
         #                         path to directories or files to skip. This option is
         #                         repeatable.
         #   -c C                  Specify configuration file to use. Defaults to ".ansible-lint"
-        args: "-q"
+        args: ""
