@@ -29,6 +29,7 @@
     password: "{{ db_pw }}"
     priv: '*.*:ALL'
     state: present
+  no_log: true
 
 - name: Create DB
   mysql_db:
@@ -37,6 +38,7 @@
     login_password: "{{ db_pw }}"
     name: "{{ db_name }}"
     state: present
+  no_log: true
 
 - name: get ip
   command: "hostname -I"
