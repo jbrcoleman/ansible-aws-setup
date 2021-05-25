@@ -3,7 +3,7 @@
   vars:
      - region: "us-east-1"
   tasks:
-    - name: get subnet info 
+    - name: get subnet info
       ec2_vpc_subnet_info:
         region: "{{ region }}"
         filters:
